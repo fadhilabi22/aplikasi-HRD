@@ -15,72 +15,104 @@ import java.awt.event.MouseEvent;
  * @author fadhil abi
  */
 public class Karyawan extends JFrame {
-   // Deklarasi Komponen CRUD
+   // Komponen Navigasi
+    private JPanel panelContent, panelCRUD, panelDashboard;
+    private CardLayout cardLayout;
+
+    // Deklarasi Komponen CRUD
     private JTextField txtId, txtNama, txtPosisi;
     private JButton btnSimpan, btnUbah, btnHapus, btnClear;
     private JTable tabelKaryawan;
     private DefaultTableModel tableModel;
 
     // Palette Warna Tema
-    private Color bgSidebar = new Color(30, 61, 89);        // Navy (Sidebar & Pop-up Header)
-    private Color bgContent = new Color(245, 247, 250);     // Light Gray/White (Konten Utama)
-    private Color btnPrimary = new Color(255, 110, 64);     // Coral / Orange
+    private Color bgSidebar = new Color(30, 61, 89);        // Navy
+    private Color bgContent = new Color(245, 247, 250);     // Light Gray
+    private Color btnPrimary = new Color(255, 110, 64);     // Coral
     private Color btnDanger = new Color(220, 53, 69);       // Merah
     private Color btnSecondary = new Color(108, 117, 125);  // Abu-abu
     private Color textDark = new Color(50, 50, 50);         // Teks gelap
 
     public Karyawan() {
         // 1. Pengaturan Dasar Frame
-        setTitle("Dashboard HRD - Kelola Karyawan");
-        setSize(950, 600); 
+        setTitle("Dashboard HRD - PT. Inti Sejahtera");
+        setSize(1000, 650); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         
         JPanel panelUtama = new JPanel(new BorderLayout());
         
-        // ==========================================
-        // 1. MEMBUAT SIDEBAR (Posisi Kiri)
-        // ==========================================
-        JPanel panelSidebar = new JPanel(new BorderLayout());
-        panelSidebar.setBackground(bgSidebar);
-        panelSidebar.setPreferredSize(new Dimension(220, 0)); 
+        // 2. SETUP SIDEBAR (Kiri)
+        initSidebar(panelUtama);
 
-        JLabel lblLogo = new JLabel("HRD SYSTEM", SwingConstants.CENTER);
-        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        lblLogo.setForeground(Color.WHITE);
-        lblLogo.setBorder(new EmptyBorder(30, 10, 30, 10)); 
-        panelSidebar.add(lblLogo, BorderLayout.NORTH);
-
-        JPanel panelMenu = new JPanel(new GridLayout(5, 1, 0, 5)); 
-        panelMenu.setBackground(bgSidebar);
-        panelMenu.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JButton navDashboard = createNavButton("   Dashboard");
-        JButton navKaryawan = createNavButton("   Data Karyawan");
-        navKaryawan.setBackground(new Color(40, 80, 115)); // Menu aktif
+        // 3. SETUP KONTEN UTAMA DENGAN CARDLAYOUT (Tengah)
+        cardLayout = new CardLayout();
+        panelContent = new JPanel(cardLayout);
         
-        panelMenu.add(navDashboard);
-        panelMenu.add(navKaryawan);
-        panelSidebar.add(panelMenu, BorderLayout.CENTER);
+        initDashboardPage(); // Halaman Dashboard
+        initCRUDPage();      // Halaman Data Karyawan
+        
+        panelContent.add(panelDashboard, "MENU_DASHBOARD");
+        panelContent.add(panelCRUD, "MENU_KARYAWAN");
+        
+        panelUtama.add(panelContent, BorderLayout.CENTER);
+        setContentPane(panelUtama);
+        
+        // Tampilan Awal
+        cardLayout.show(panelContent, "MENU_DASHBOARD");
+    }
 
-        JButton btnLogout = createNavButton("   Logout");
-        btnLogout.setForeground(new Color(255, 150, 150)); 
-        btnLogout.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(50, 80, 110)), 
-            BorderFactory.createEmptyBorder(15, 20, 15, 20)
+    // ==========================================
+    // HALAMAN DASHBOARD (INFO CARDS)
+    // ==========================================
+    private void initDashboardPage() {
+        panelDashboard = new JPanel(new BorderLayout());
+        panelDashboard.setBackground(bgContent);
+        panelDashboard.setBorder(new EmptyBorder(30, 40, 30, 40));
+
+        // Header
+        JLabel lblTitle = new JLabel("Ringkasan Perusahaan");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        lblTitle.setForeground(textDark);
+        panelDashboard.add(lblTitle, BorderLayout.NORTH);
+
+        // Grid Cards
+        JPanel panelCards = new JPanel(new GridLayout(1, 3, 25, 0));
+        panelCards.setBackground(bgContent);
+        panelCards.setBorder(new EmptyBorder(30, 0, 0, 0));
+
+        panelCards.add(createStatCard("Total Karyawan", "128", new Color(52, 152, 219)));
+        panelCards.add(createStatCard("Total Divisi", "8", new Color(46, 204, 113)));
+        panelCards.add(createStatCard("Hadir Hari Ini", "95%", new Color(155, 89, 182)));
+
+        panelDashboard.add(panelCards, BorderLayout.CENTER);
+    }
+
+    private JPanel createStatCard(String title, String val, Color col) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(Color.WHITE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(230, 230, 230), 1),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
         ));
-        panelSidebar.add(btnLogout, BorderLayout.SOUTH);
 
-        panelUtama.add(panelSidebar, BorderLayout.WEST);
+        JLabel t = new JLabel(title); t.setFont(new Font("Segoe UI", Font.BOLD, 14)); t.setForeground(Color.GRAY);
+        JLabel v = new JLabel(val); v.setFont(new Font("Segoe UI", Font.BOLD, 42)); v.setForeground(col);
 
-        // ==========================================
-        // 2. MEMBUAT KONTEN UTAMA (Posisi Tengah)
-        // ==========================================
-        JPanel panelContent = new JPanel(new BorderLayout(15, 15));
-        panelContent.setBackground(bgContent);
-        panelContent.setBorder(new EmptyBorder(25, 30, 25, 30)); 
+        card.add(t, BorderLayout.NORTH);
+        card.add(v, BorderLayout.CENTER);
+        return card;
+    }
 
-        // --- BAGIAN ATAS KONTEN (Header & Input) ---
+    // ==========================================
+    // HALAMAN CRUD (DATA KARYAWAN)
+    // ==========================================
+    private void initCRUDPage() {
+        panelCRUD = new JPanel(new BorderLayout(15, 15));
+        panelCRUD.setBackground(bgContent);
+        panelCRUD.setBorder(new EmptyBorder(25, 30, 25, 30));
+
+        // --- BAGIAN ATAS (Header & Input) ---
         JPanel panelAtas = new JPanel(new BorderLayout());
         panelAtas.setBackground(bgContent);
         
@@ -122,14 +154,12 @@ public class Karyawan extends JFrame {
 
         panelTombol.add(btnSimpan); panelTombol.add(btnUbah); panelTombol.add(btnHapus); panelTombol.add(btnClear);
         panelAtas.add(panelTombol, BorderLayout.SOUTH);
+        panelCRUD.add(panelAtas, BorderLayout.NORTH);
 
-        panelContent.add(panelAtas, BorderLayout.NORTH);
-
-        // --- BAGIAN BAWAH KONTEN (Tabel) ---
+        // --- TABEL ---
         String[] kolom = {"ID", "Nama Karyawan", "Posisi"};
         tableModel = new DefaultTableModel(kolom, 0);
         tabelKaryawan = new JTable(tableModel);
-        
         tabelKaryawan.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         tabelKaryawan.setRowHeight(35); 
         tabelKaryawan.setSelectionBackground(new Color(255, 220, 200)); 
@@ -145,23 +175,14 @@ public class Karyawan extends JFrame {
         JScrollPane scrollPane = new JScrollPane(tabelKaryawan);
         scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1)); 
+        panelCRUD.add(scrollPane, BorderLayout.CENTER);
 
-        panelContent.add(scrollPane, BorderLayout.CENTER);
-
-        panelUtama.add(panelContent, BorderLayout.CENTER);
-        setContentPane(panelUtama);
-
-        // --- DUMMY DATA ---
+        // Dummy Data
         tableModel.addRow(new Object[]{"1", "Budi Santoso", "HR Manager"});
         tableModel.addRow(new Object[]{"2", "Siti Aminah", "Staff IT"});
 
-        // ==========================================
-        // ACTION LISTENERS
-        // ==========================================
-        
-        // Listener Tabel
+        // Listeners
         tabelKaryawan.addMouseListener(new MouseAdapter() {
-            @Override
             public void mouseClicked(MouseEvent e) {
                 int baris = tabelKaryawan.getSelectedRow();
                 if (baris != -1) {
@@ -171,57 +192,58 @@ public class Karyawan extends JFrame {
                 }
             }
         });
-
-        // Tombol Clear
         btnClear.addActionListener(e -> clearForm());
-
-        // Tombol Simpan
         btnSimpan.addActionListener(e -> {
-            if (txtNama.getText().isEmpty() || txtPosisi.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Nama dan Posisi harus diisi!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Simulasi: Menyimpan ke Supabase...");
-                clearForm();
-            }
-        });
-
-        // Tombol Ubah
-        btnUbah.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Pilih data di tabel dulu yang mau diubah!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Simulasi: Mengubah data di Supabase...");
-                clearForm();
-            }
-        });
-
-        // Tombol Hapus (Pake Custom Pop-up)
-        btnHapus.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Pilih data di tabel dulu yang mau dihapus!", "Peringatan", JOptionPane.WARNING_MESSAGE);
-            } else {
-                boolean yakinHapus = showCustomConfirm("Konfirmasi Hapus", "Yakin mau menghapus karyawan ini?");
-                if (yakinHapus) {
-                    JOptionPane.showMessageDialog(this, "Simulasi: Menghapus data dari Supabase...");
-                    clearForm();
-                }
-            }
-        });
-
-        // Tombol Logout (Pake Custom Pop-up)
-        btnLogout.addActionListener(e -> {
-            boolean yakinKeluar = showCustomConfirm("Konfirmasi Keluar", "Apakah Anda yakin ingin keluar dari sistem?");
-            if (yakinKeluar) {
-                new LoginForm().setVisible(true);
-                this.dispose(); 
-            }
+            if (txtNama.getText().isEmpty()) JOptionPane.showMessageDialog(this, "Isi nama dulu masbro!");
+            else JOptionPane.showMessageDialog(this, "Simulasi: Simpan ke Supabase...");
         });
     }
 
     // ==========================================
-    // METHOD HELPER UI AESTHETIC
+    // SIDEBAR SETUP
     // ==========================================
-    
+    private void initSidebar(JPanel mainPanel) {
+        JPanel panelSidebar = new JPanel(new BorderLayout());
+        panelSidebar.setBackground(bgSidebar);
+        panelSidebar.setPreferredSize(new Dimension(220, 0)); 
+
+        JLabel lblLogo = new JLabel("HRD SYSTEM", SwingConstants.CENTER);
+        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblLogo.setForeground(Color.WHITE);
+        lblLogo.setBorder(new EmptyBorder(30, 10, 30, 10)); 
+        panelSidebar.add(lblLogo, BorderLayout.NORTH);
+
+        JPanel panelMenu = new JPanel(new GridLayout(10, 1, 0, 5)); 
+        panelMenu.setBackground(bgSidebar);
+        panelMenu.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        JButton navDashboard = createNavButton("   Dashboard");
+        JButton navKaryawan = createNavButton("   Data Karyawan");
+        JButton btnLogout = createNavButton("   Logout");
+
+        // Action Navigasi
+        navDashboard.addActionListener(e -> cardLayout.show(panelContent, "MENU_DASHBOARD"));
+        navKaryawan.addActionListener(e -> cardLayout.show(panelContent, "MENU_KARYAWAN"));
+        btnLogout.addActionListener(e -> {
+            if(showCustomConfirm("Logout", "Yakin mau keluar masbro?")) {
+                new LoginForm().setVisible(true);
+                this.dispose();
+            }
+        });
+
+        panelMenu.add(navDashboard);
+        panelMenu.add(navKaryawan);
+        panelSidebar.add(panelMenu, BorderLayout.CENTER);
+        
+        btnLogout.setForeground(new Color(255, 150, 150));
+        panelSidebar.add(btnLogout, BorderLayout.SOUTH);
+
+        mainPanel.add(panelSidebar, BorderLayout.WEST);
+    }
+
+    // ==========================================
+    // HELPERS (UI Aesthetics)
+    // ==========================================
     private JButton createNavButton(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 15));
@@ -231,14 +253,9 @@ public class Karyawan extends JFrame {
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20)); 
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                if(!text.contains("Data Karyawan")) btn.setBackground(new Color(50, 80, 110)); 
-            }
-            public void mouseExited(MouseEvent e) {
-                if(!text.contains("Data Karyawan")) btn.setBackground(bgSidebar);
-            }
+            public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(50, 80, 110)); }
+            public void mouseExited(MouseEvent e) { btn.setBackground(bgSidebar); }
         });
         return btn;
     }
@@ -246,33 +263,20 @@ public class Karyawan extends JFrame {
     private JButton createActionButton(String text, Color bgColor) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setBackground(bgColor);
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBackground(bgColor); btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false); btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(8, 25, 8, 25));
-        
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) { btn.setBackground(bgColor.brighter()); }
-            public void mouseExited(MouseEvent e) { btn.setBackground(bgColor); }
-        });
         return btn;
     }
 
     private JLabel createLabel(String text, Font font) {
-        JLabel label = new JLabel(text);
-        label.setFont(font);
-        label.setForeground(textDark);
+        JLabel label = new JLabel(text); label.setFont(font); label.setForeground(textDark);
         return label;
     }
 
     private JTextField createTextField(Font font) {
-        JTextField tf = new JTextField(25); 
-        tf.setFont(font);
-        tf.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
-        ));
+        JTextField tf = new JTextField(25); tf.setFont(font);
+        tf.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(180, 180, 180), 1), BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         return tf;
     }
 
@@ -281,50 +285,18 @@ public class Karyawan extends JFrame {
         tabelKaryawan.clearSelection();
     }
 
-    // --- METHOD CUSTOM POP-UP AESTHETIC ---
     private boolean showCustomConfirm(String title, String message) {
         JDialog dialog = new JDialog(this, title, true);
-        dialog.setUndecorated(true); 
-        dialog.setSize(380, 170);
-        dialog.setLocationRelativeTo(this);
-        
-        JPanel panelUtama = new JPanel(new BorderLayout());
-        panelUtama.setBorder(BorderFactory.createLineBorder(bgSidebar, 2)); 
-        panelUtama.setBackground(Color.WHITE);
-
-        JPanel panelHeader = new JPanel(new BorderLayout());
-        panelHeader.setBackground(bgSidebar);
-        panelHeader.setPreferredSize(new Dimension(380, 40));
-        
-        JLabel lblTitle = new JLabel("   " + title);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        lblTitle.setForeground(Color.WHITE);
-        panelHeader.add(lblTitle, BorderLayout.CENTER);
-        panelUtama.add(panelHeader, BorderLayout.NORTH);
-
-        JLabel lblMessage = new JLabel(message, SwingConstants.CENTER);
-        lblMessage.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        lblMessage.setForeground(textDark);
-        panelUtama.add(lblMessage, BorderLayout.CENTER);
-
-        JPanel panelTombol = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
-        panelTombol.setBackground(Color.WHITE);
-        
-        JButton btnYes = createActionButton("Ya", btnDanger); 
-        JButton btnNo = createActionButton("Batal", btnSecondary);    
-
-        final boolean[] jawaban = {false};
-
-        btnYes.addActionListener(e -> { jawaban[0] = true; dialog.dispose(); });
-        btnNo.addActionListener(e -> { jawaban[0] = false; dialog.dispose(); });
-
-        panelTombol.add(btnYes);
-        panelTombol.add(btnNo);
-        panelUtama.add(panelTombol, BorderLayout.SOUTH);
-
-        dialog.setContentPane(panelUtama);
-        dialog.setVisible(true); 
-
-        return jawaban[0];
+        dialog.setUndecorated(true); dialog.setSize(380, 170); dialog.setLocationRelativeTo(this);
+        JPanel p = new JPanel(new BorderLayout()); p.setBorder(BorderFactory.createLineBorder(bgSidebar, 2)); p.setBackground(Color.WHITE);
+        JLabel m = new JLabel(message, SwingConstants.CENTER); m.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        JPanel b = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15)); b.setBackground(Color.WHITE);
+        JButton y = createActionButton("Ya", btnDanger); JButton n = createActionButton("Batal", btnSecondary);
+        final boolean[] res = {false};
+        y.addActionListener(e -> { res[0] = true; dialog.dispose(); });
+        n.addActionListener(e -> { res[0] = false; dialog.dispose(); });
+        b.add(y); b.add(n); p.add(m, BorderLayout.CENTER); p.add(b, BorderLayout.SOUTH);
+        dialog.setContentPane(p); dialog.setVisible(true);
+        return res[0];
     }
 }

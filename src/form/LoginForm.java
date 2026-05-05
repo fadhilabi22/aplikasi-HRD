@@ -38,7 +38,7 @@ public class LoginForm extends JFrame{
         panelUtama.setBorder(new EmptyBorder(30, 40, 30, 40)); // Margin keliling (Atas, Kiri, Bawah, Kanan)
 
         // --- Panel Header (Judul) ---
-        JLabel lblJudul = new JLabel("LOGIN HRD PT.Inti Sejahatera", SwingConstants.CENTER);
+        JLabel lblJudul = new JLabel("LOGIN HRD PT.Inti Sejahtera", SwingConstants.CENTER);
         lblJudul.setFont(new Font("Segoe UI", Font.BOLD, 28));
         lblJudul.setForeground(warnaTeks);
         panelUtama.add(lblJudul, BorderLayout.NORTH);
@@ -122,12 +122,66 @@ public class LoginForm extends JFrame{
                 JOptionPane.showMessageDialog(this, "Username dan Password harus diisi masbro!", "Gagal", JOptionPane.WARNING_MESSAGE);
             } else {
                 // Logic Backend API di sini nanti
-                JOptionPane.showMessageDialog(this, "Berhasil masuk!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
-                
+                showSuccessAlert("Selamat! Berhasil Masuk Sistem");
+
+                // Setelah itu baru pindah halaman ke Karyawan
                 new Karyawan().setVisible(true);
                 this.dispose();
             }
         });
+    }
+    // --- METHOD CUSTOM ALERT SUKSES AESTHETIC ---
+    private void showSuccessAlert(String message) {
+        JDialog dialog = new JDialog(this, "Sukses", true);
+        dialog.setUndecorated(true); // Ilangin frame bawaan
+        dialog.setSize(350, 150);
+        dialog.setLocationRelativeTo(this);
+
+        // Palette Warna
+        Color bgAlert = Color.WHITE;
+        Color greenSuccess = new Color(46, 204, 113); // Hijau Emerald
+        Color textDark = new Color(50, 50, 50);
+
+        JPanel panelUtama = new JPanel(new BorderLayout());
+        panelUtama.setBackground(bgAlert);
+        panelUtama.setBorder(BorderFactory.createLineBorder(greenSuccess, 2));
+
+        // Panel Atas (Header warna Hijau)
+        JPanel panelHeader = new JPanel(new BorderLayout());
+        panelHeader.setBackground(greenSuccess);
+        panelHeader.setPreferredSize(new Dimension(350, 35));
+        
+        JLabel lblHeader = new JLabel("  SUKSES", SwingConstants.LEFT);
+        lblHeader.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lblHeader.setForeground(Color.WHITE);
+        panelHeader.add(lblHeader, BorderLayout.CENTER);
+        panelUtama.add(panelHeader, BorderLayout.NORTH);
+
+        // Isi Pesan
+        JLabel lblMessage = new JLabel(message, SwingConstants.CENTER);
+        lblMessage.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        lblMessage.setForeground(textDark);
+        panelUtama.add(lblMessage, BorderLayout.CENTER);
+
+        // Panel Bawah (Tombol OK)
+        JPanel panelTombol = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 15));
+        panelTombol.setBackground(bgAlert);
+        
+        JButton btnOk = new JButton("Lanjutkan");
+        btnOk.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnOk.setBackground(greenSuccess);
+        btnOk.setForeground(Color.WHITE);
+        btnOk.setFocusPainted(false);
+        btnOk.setBorder(BorderFactory.createEmptyBorder(8, 25, 8, 25));
+        btnOk.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnOk.addActionListener(e -> dialog.dispose());
+        
+        panelTombol.add(btnOk);
+        panelUtama.add(panelTombol, BorderLayout.SOUTH);
+
+        dialog.setContentPane(panelUtama);
+        dialog.setVisible(true);
     }
 }
 
