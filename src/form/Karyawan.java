@@ -10,11 +10,12 @@ import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.net.URL;
 import java.io.OutputStream;
-import java.util.HashSet; // Import HashSet buat logic hitung divisi
+import java.util.HashSet;
+
+// --- IMPORT WAJIB BUAT BACKEND ---
 import helper.DatabaseConnection; 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import entity.KaryawanEntity;
+import com.google.gson.Gson;
 
 public class Karyawan extends JFrame {
     private JPanel panelContent, panelCRUD, panelDashboard;
@@ -94,25 +95,19 @@ public class Karyawan extends JFrame {
             tableModel.setRowCount(0);
 
             if (response != null && !response.equals("[]")) {
-                JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
-                for (int i = 0; i < jsonArray.size(); i++) {
-                    JsonObject obj = jsonArray.get(i).getAsJsonObject();
-                    String id = obj.get("id").getAsString();
-                    String nama = obj.get("nama_karyawan").getAsString();
-                    String posisi = obj.get("posisi").getAsString();
-                    tableModel.addRow(new Object[]{id, nama, posisi});
+                Gson gson = new Gson();
+                // Tarik data pake Entity!
+                KaryawanEntity[] dataKaryawan = gson.fromJson(response, KaryawanEntity[].class);
+                
+                for (KaryawanEntity k : dataKaryawan) {
+                    tableModel.addRow(new Object[]{k.getId(), k.getNama_karyawan(), k.getPosisi()});
                 }
             }
             
-            // --- UPDATE ANGKA DASHBOARD SECARA OTOMATIS ---
-            
-            // 1. Update Total Karyawan (Dari jumlah baris tabel)
             lblTotalKaryawan.setText(String.valueOf(tableModel.getRowCount()));
             
-            // 2. Update Total Divisi (Pake HashSet biar nggak ada duplikat)
             HashSet<String> divisiSet = new HashSet<>();
             for (int i = 0; i < tableModel.getRowCount(); i++) {
-                // Ambil teks dari kolom posisi (index ke-2)
                 String posisi = tableModel.getValueAt(i, 2).toString().trim().toLowerCase();
                 divisiSet.add(posisi);
             }
@@ -124,10 +119,7 @@ public class Karyawan extends JFrame {
     }
 
     // ==========================================
-    // UI DASHBOARD (3 KARTU)
-    // ==========================================
-    // ==========================================
-    // UI DASHBOARD (JADI 2 KARTU LEBIH CLEAN)
+    // UI DASHBOARD (2 KARTU CLEAN)
     // ==========================================
     private void initDashboardPage() {
         panelDashboard = new JPanel(new BorderLayout());
@@ -139,7 +131,6 @@ public class Karyawan extends JFrame {
         lblTitle.setForeground(textDark);
         panelDashboard.add(lblTitle, BorderLayout.NORTH);
 
-        // Ubah jadi GridLayout(1, 2) biar 2 kartu ini melar dan simetris
         JPanel panelCards = new JPanel(new GridLayout(1, 2, 25, 0)); 
         panelCards.setBackground(bgContent);
         panelCards.setBorder(new EmptyBorder(30, 0, 0, 0));
@@ -154,7 +145,7 @@ public class Karyawan extends JFrame {
         JLabel t1 = new JLabel("Total Karyawan"); t1.setFont(new Font("Segoe UI", Font.BOLD, 16)); t1.setForeground(Color.GRAY);
         lblTotalKaryawan = new JLabel("0");
         lblTotalKaryawan.setFont(new Font("Segoe UI", Font.BOLD, 48));
-        lblTotalKaryawan.setForeground(new Color(52, 152, 219)); // Warna Biru
+        lblTotalKaryawan.setForeground(new Color(52, 152, 219)); 
         card1.add(t1, BorderLayout.NORTH); card1.add(lblTotalKaryawan, BorderLayout.CENTER);
         
         // --- KARTU 2: TOTAL DIVISI ---
@@ -167,10 +158,9 @@ public class Karyawan extends JFrame {
         JLabel t2 = new JLabel("Total Divisi"); t2.setFont(new Font("Segoe UI", Font.BOLD, 16)); t2.setForeground(Color.GRAY);
         lblTotalDivisi = new JLabel("0");
         lblTotalDivisi.setFont(new Font("Segoe UI", Font.BOLD, 48));
-        lblTotalDivisi.setForeground(new Color(46, 204, 113)); // Warna Hijau
+        lblTotalDivisi.setForeground(new Color(46, 204, 113)); 
         card2.add(t2, BorderLayout.NORTH); card2.add(lblTotalDivisi, BorderLayout.CENTER);
 
-        // Masukin 2 kartu ke dalam grid
         panelCards.add(card1);
         panelCards.add(card2);
         
@@ -222,6 +212,7 @@ public class Karyawan extends JFrame {
         btnHapus = createActionButton("Hapus", btnDanger);
         btnClear = createActionButton("Clear", btnSecondary);
 
+        // --- ACTION SIMPAN DENGAN ENTITY ---
         btnSimpan.addActionListener(e -> {
             if (!txtId.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Ini data lama masbro! Klik 'Ubah' kalau mau ngedit.", "Peringatan", JOptionPane.WARNING_MESSAGE);
@@ -232,7 +223,14 @@ public class Karyawan extends JFrame {
                 return; 
             }
             try {
-                String json = "{\"nama_karyawan\":\"" + txtNama.getText() + "\", \"posisi\":\"" + txtPosisi.getText() + "\"}";
+                // Bungkus pake Entity
+                KaryawanEntity kar = new KaryawanEntity();
+                kar.setNama_karyawan(txtNama.getText().trim());
+                kar.setPosisi(txtPosisi.getText().trim());
+                
+                // Ubah ke JSON pake GSON
+                String json = new Gson().toJson(kar);
+                
                 int code = sendRequest("POST", "karyawan", json);
                 if (code == 201 || code == 200) {
                     JOptionPane.showMessageDialog(this, "Data Berhasil Masuk Database!");
@@ -241,13 +239,22 @@ public class Karyawan extends JFrame {
             } catch (Exception ex) { ex.printStackTrace(); }
         });
 
+        // --- ACTION UBAH DENGAN ENTITY ---
         btnUbah.addActionListener(e -> {
             if (txtId.getText().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Pilih data di tabel dulu yang mau diubah!", "Peringatan", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             try {
-                String json = "{\"id\":" + txtId.getText() + ", \"nama_karyawan\":\"" + txtNama.getText() + "\", \"posisi\":\"" + txtPosisi.getText() + "\"}";
+                // Bungkus pake Entity, ID wajib masuk biar Supabase tau mana yang diubah
+                KaryawanEntity kar = new KaryawanEntity();
+                kar.setId(Integer.parseInt(txtId.getText())); 
+                kar.setNama_karyawan(txtNama.getText().trim());
+                kar.setPosisi(txtPosisi.getText().trim());
+                
+                // Ubah ke JSON pake GSON
+                String json = new Gson().toJson(kar);
+                
                 int code = sendRequest("UPSERT", "karyawan", json);
                 if (code == 201 || code == 200 || code == 204) {
                     JOptionPane.showMessageDialog(this, "Data Berhasil Diubah!");
