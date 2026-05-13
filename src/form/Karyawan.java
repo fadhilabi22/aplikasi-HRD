@@ -12,9 +12,11 @@ import java.util.HashSet;
 import helper.DatabaseConnection;
 import entity.KaryawanEntity;
 import com.google.gson.Gson;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Karyawan extends JFrame {
-    private JPanel panelContent, panelCRUD, panelDashboard;
+    private JPanel panelContent, panelCRUD, panelDashboard, panelChartContainer;
     private CardLayout cardLayout;
     private JTextField txtId, txtNama, txtPosisi;
     private JButton btnSimpan, btnUbah, btnHapus, btnClear;
@@ -88,47 +90,127 @@ public class Karyawan extends JFrame {
     }
 
     private void loadData() {
-        try {
-            String response = DatabaseConnection.fetchData("karyawan?select=*&order=id.asc");
-            tableModel.setRowCount(0);
-            if (response != null && !response.equals("[]")) {
-                Gson gson = new Gson();
-                KaryawanEntity[] dataKaryawan = gson.fromJson(response, KaryawanEntity[].class);
-                for (KaryawanEntity k : dataKaryawan) {
-                    tableModel.addRow(new Object[]{k.getId(), k.getNama_karyawan(), k.getPosisi()});
-                }
+    try {
+        String response = DatabaseConnection.fetchData("karyawan?select=*&order=id.asc");
+        tableModel.setRowCount(0);
+        
+        // Buat Map untuk menampung data grafik
+        Map<String, Integer> deptData = new HashMap<>();
+
+        if (response != null && !response.equals("[]")) {
+            Gson gson = new Gson();
+            KaryawanEntity[] dataKaryawan = gson.fromJson(response, KaryawanEntity[].class);
+            for (KaryawanEntity k : dataKaryawan) {
+                tableModel.addRow(new Object[]{k.getId(), k.getNama_karyawan(), k.getPosisi()});
+                
+                // --- LOGIKA HITUNG DATA CHART ---
+                String posisi = (k.getPosisi() == null || k.getPosisi().isEmpty()) ? "Unknown" : k.getPosisi();
+                deptData.put(posisi, deptData.getOrDefault(posisi, 0) + 1);
             }
-            lblTotalKaryawan.setText(String.valueOf(tableModel.getRowCount()));
-            HashSet<String> divisiSet = new HashSet<>();
-            for (int i = 0; i < tableModel.getRowCount(); i++) {
-                divisiSet.add(tableModel.getValueAt(i, 2).toString().trim().toLowerCase());
-            }
-            lblTotalDivisi.setText(String.valueOf(divisiSet.size()));
-        } catch (Exception e) { System.err.println("Gagal sinkron: " + e.getMessage()); }
+        }
+
+        // Update Label
+        lblTotalKaryawan.setText(String.valueOf(tableModel.getRowCount()));
+        lblTotalDivisi.setText(String.valueOf(deptData.size()));
+
+        // --- PANGGIL FUNGSI CHART DI SINI MASBRO ---
+        updateChart(deptData);
+
+    } catch (Exception e) { 
+        System.err.println("Gagal sinkron: " + e.getMessage()); 
     }
+}
 
     // ==========================================
     // UI DASHBOARD (CLEAN & MINIMALIST)
     // ==========================================
     private void initDashboardPage() {
-        panelDashboard = new JPanel(new BorderLayout());
-        panelDashboard.setBackground(bgMain);
-        panelDashboard.setBorder(new EmptyBorder(40, 50, 40, 50));
-        
-        JLabel lblTitle = new JLabel("Global Overview");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 32));
-        lblTitle.setForeground(textDark);
-        panelDashboard.add(lblTitle, BorderLayout.NORTH);
+    panelDashboard = new JPanel(new BorderLayout(0, 30));
+    panelDashboard.setBackground(bgMain);
+    panelDashboard.setBorder(new EmptyBorder(40, 50, 40, 50));
+    
+    JLabel lblTitle = new JLabel("Global Overview");
+    lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 32));
+    lblTitle.setForeground(textDark);
+    panelDashboard.add(lblTitle, BorderLayout.NORTH);
 
-        JPanel panelCards = new JPanel(new GridLayout(1, 2, 35, 0)); 
-        panelCards.setOpaque(false);
-        panelCards.setBorder(new EmptyBorder(40, 0, 0, 0));
+    JPanel panelCenter = new JPanel(new BorderLayout(0, 35));
+    panelCenter.setOpaque(false);
 
-        panelCards.add(createModernCard("Active Employees", lblTotalKaryawan = new JLabel("0"), accentPrimary));
-        panelCards.add(createModernCard("Department Count", lblTotalDivisi = new JLabel("0"), accentSuccess));
-        
-        panelDashboard.add(panelCards, BorderLayout.CENTER);
-    }
+    // Row 1: Cards
+    JPanel panelCards = new JPanel(new GridLayout(1, 2, 35, 0)); 
+    panelCards.setOpaque(false);
+    panelCards.add(createModernCard("Active Employees", lblTotalKaryawan = new JLabel("0"), accentPrimary));
+    panelCards.add(createModernCard("Department Count", lblTotalDivisi = new JLabel("0"), accentSuccess));
+    panelCenter.add(panelCards, BorderLayout.NORTH);
+
+    // Row 2: CUSTOM CHART (Tanpa Library)
+    // Row 2: CUSTOM CHART
+    panelChartContainer = new JPanel(new BorderLayout());
+    panelChartContainer.setOpaque(false);
+    // Beri margin agar tidak menempel ke pinggir
+    panelChartContainer.setBorder(new EmptyBorder(20, 0, 0, 0)); 
+    
+    panelCenter.add(panelChartContainer, BorderLayout.CENTER);
+    panelDashboard.add(panelCenter, BorderLayout.CENTER);
+}
+    private void updateChart(Map<String, Integer> data) {
+    panelChartContainer.removeAll();
+    
+    // Kita bikin JPanel custom yang nge-gambar grafik batang
+    JPanel canvas = new JPanel() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (data.isEmpty()) return;
+
+            int width = getWidth();
+            int height = getHeight();
+            int padding = 50;
+            int barWidth = (width - (2 * padding)) / Math.max(data.size(), 1) - 20;
+            int maxVal = data.values().stream().max(Integer::compare).orElse(1);
+
+            int x = padding + 10;
+            for (Map.Entry<String, Integer> entry : data.entrySet()) {
+                // Itung tinggi batang relatif terhadap nilai maksimal
+                int barHeight = (int) ((double) entry.getValue() / maxVal * (height - 100));
+                
+                // Gambar Batang (Warna Indigo biar konsisten)
+                g2.setColor(accentPrimary);
+                g2.fillRoundRect(x, height - padding - barHeight, barWidth, barHeight, 10, 10);
+
+                // Gambar Teks Nilai di Atas Batang
+                g2.setColor(textDark);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                g2.drawString(entry.getValue().toString(), x + (barWidth / 2) - 5, height - padding - barHeight - 10);
+
+                // Gambar Nama Label (Posisi) di Bawah Batang
+                g2.setColor(textLight);
+                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+                String label = entry.getKey().length() > 10 ? entry.getKey().substring(0, 10) + ".." : entry.getKey();
+                g2.drawString(label, x, height - padding + 20);
+
+                x += barWidth + 20;
+            }
+        }
+    };
+
+    canvas.setBackground(Color.WHITE);
+    // Tambahkan baris ini biar panelnya punya tinggi masbro
+    canvas.setPreferredSize(new Dimension(800, 300)); 
+    canvas.setBorder(new CompoundBorder(
+        new LineBorder(new Color(229, 231, 235), 1, true),
+        new EmptyBorder(20, 20, 20, 20)
+    ));
+
+    panelChartContainer.removeAll(); // Hapus yang lama
+    panelChartContainer.add(canvas, BorderLayout.CENTER);
+    panelChartContainer.revalidate();
+    panelChartContainer.repaint();
+}
 
     // ==========================================
     // UI CRUD (ELEGANT & CLEAN)
