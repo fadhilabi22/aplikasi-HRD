@@ -1,7 +1,7 @@
 package entity;
 
 /**
- * Class Wadah (Model/Entity) untuk tabel Karyawan
+ * Class  (Model/Entity)
  */
 public class KaryawanEntity {
     
